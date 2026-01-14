@@ -9,6 +9,7 @@ const app = express();
 app.use(cors("*"));
 app.use(express.json());
 
+app.get("/", (req, res) => res.json({ message: "Server is up and running." }));
 app.use("/api", routes);
 
 export default app;
