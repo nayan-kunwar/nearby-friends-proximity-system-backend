@@ -1,9 +1,16 @@
 import Redis from "ioredis";
+const isProd = process.env.NODE_ENV === "production";
 
 export const redis = new Redis(process.env.REDIS_URL, {
-  tls: {},
+  ...(isProd && {
+    tls: {}, // ONLY for Upstash / prod
+  }),
   maxRetriesPerRequest: null,
   enableReadyCheck: false,
+});
+
+redis.on("connect", () => {
+  console.log("🔌 Redis connecting...");
 });
 
 redis.on("ready", () => {
@@ -11,7 +18,7 @@ redis.on("ready", () => {
 });
 
 redis.on("error", (err) => {
-  console.error("❌ Redis error:", err);
+  console.error("❌ Redis error:", err.message);
 });
 
 redis.on("reconnecting", () => {
@@ -20,7 +27,7 @@ redis.on("reconnecting", () => {
 
 (async () => {
   try {
-    const pong = await redis.ping();
+    const pong = await redis.ping(); // avoid in production  Cold-start delay
     console.log("🟢 Redis ping:", pong);
   } catch (err) {
     console.error("🔴 Redis ping failed", err);

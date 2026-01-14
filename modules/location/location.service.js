@@ -2,6 +2,7 @@ import { redis } from "../../config/redis.js";
 import { GEO_USERS_KEY } from "../../constants/redisKeys.js";
 
 export const saveLocation = async (userId, lat, lng) => {
+  console.log("inside save location");
   await redis.geoadd(
     GEO_USERS_KEY,
     lng, // ⚠️ longitude FIRST

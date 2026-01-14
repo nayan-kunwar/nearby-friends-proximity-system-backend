@@ -2,6 +2,7 @@ import express from "express";
 import "dotenv/config";
 import "./config/redis.js";
 import cors from "cors";
+import morgan from "morgan";
 import routes from "./routes/index.js";
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(morgan("dev"));
 
 app.get("/", (req, res) => res.json({ message: "Server is up and running." }));
 app.use("/api", routes);
