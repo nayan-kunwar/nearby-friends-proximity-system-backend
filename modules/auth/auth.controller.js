@@ -3,12 +3,23 @@ import jwt from "jsonwebtoken";
 import Auth from "./auth.model.js";
 
 export const register = async (req, res) => {
-  const { email, password } = req.body;
+  const { fullName, username, email, password } = req.body;
 
   const hashed = await bcrypt.hash(password, 10);
-  await Auth.create({ email, password: hashed });
+  const user = await Auth.create({
+    fullName,
+    username,
+    email,
+    password: hashed,
+  });
 
-  res.status(201).json({ message: "User created" });
+  res.status(201).json({
+    success: true,
+    statusCode: 201,
+    message: "User created successfully",
+    data: user,
+    meta: {},
+  });
 };
 
 export const login = async (req, res) => {
@@ -29,5 +40,10 @@ export const login = async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
-  res.json({ token });
+  res.json({
+    success: true,
+    statusCode: 200,
+    message: "Login successful",
+    token,
+  });
 };
