@@ -1,29 +1,63 @@
 import Friend from "./friend.model.js";
+import FriendRequestModel from "./FriendRequest.model.js";
 
 /**
  * Send friend request
  */
 export const sendFriendRequest = async (req, res) => {
-  const friendId = req.params.friendId;
+  try {
+    const senderId = req.user.id;
+    const receiverId = req.params.friendId;
 
-  // prevent self-add
-  if (friendId === req.user.id)
-    return res.status(400).json({ message: "Cannot add yourself" });
+    // 1️⃣ Prevent self request
+    if (senderId === receiverId) {
+      return res.status(400).json({
+        message: "You cannot send a friend request to yourself",
+      });
+    }
 
-  // prevent duplicate
-  const exists = await Friend.findOne({
-    user: req.user.id,
-    friend: friendId,
-  });
-  if (exists) return res.status(409).json({ message: "Request already sent" });
+    // 2️⃣ Already friends?
+    const alreadyFriends = await Friend.findOne({
+      user: senderId,
+      friend: receiverId,
+    });
 
-  await Friend.create({
-    user: req.user.id,
-    friend: friendId,
-    status: "pending",
-  });
+    if (alreadyFriends) {
+      return res.status(409).json({
+        message: "You are already friends",
+      });
+    }
 
-  res.json({ message: "Friend request sent" });
+    // 3️⃣ Existing pending request (either direction)
+    const existingRequest = await FriendRequestModel.findOne({
+      $or: [
+        { sender: senderId, receiver: receiverId, status: "pending" },
+        { sender: receiverId, receiver: senderId, status: "pending" },
+      ],
+    });
+
+    if (existingRequest) {
+      return res.status(409).json({
+        message: "Friend request already exists",
+      });
+    }
+
+    // 4️⃣ Create request
+    await FriendRequestModel.create({
+      sender: senderId,
+      receiver: receiverId,
+      status: "pending",
+    });
+
+    return res.status(201).json({
+      message: "Friend request sent successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Failed to send friend request",
+    });
+  }
 };
 
 /**
@@ -64,4 +98,27 @@ export const getFriends = async (req, res) => {
   }).select("friend");
 
   res.json(friends.map((f) => f.friend));
+};
+
+export const getFriendRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const requests = await FriendRequestModel.find({
+      receiver: userId,
+      status: "pending",
+    })
+      .populate("sender", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: requests,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch friend requests",
+    });
+  }
 };

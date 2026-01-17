@@ -11,7 +11,7 @@ export const updateLocation = async (req, res) => {
   res.json({ success: true });
 };
 
-export const nearbyFriends = async (req, res) => {
+export const nearbyUsers = async (req, res) => {
   const radius = Number(req.query.radius || 5);
 
   const pos = await getUserPosition(req.user.id);
@@ -20,16 +20,29 @@ export const nearbyFriends = async (req, res) => {
   const [lng, lat] = pos.map(Number);
 
   const nearby = await getNearbyUsers(lng, lat, radius);
-  // console.log(nearby);
 
-  const friends = await Friend.find({ user: req.user.id, status: "accepted" });
-  const friendIds = new Set(friends.map((f) => f.friend.toString()));
+  const relations = await Friend.find({
+    $or: [{ user: req.user.id }, { friend: req.user.id }],
+  });
+
+  const relationMap = new Map();
+
+  relations.forEach((r) => {
+    const otherUser =
+      r.user.toString() === req.user.id
+        ? r.friend.toString()
+        : r.user.toString();
+
+    relationMap.set(otherUser, r.status);
+  });
 
   const result = nearby
-    .filter(([member]) => friendIds.has(member))
-    .map(([member, distance]) => ({
-      userId: member,
+    .filter(([userId]) => userId !== req.user.id.toString())
+    .map(([userId, distance]) => ({
+      userId,
       distanceKm: Number(distance),
+      relationship: relationMap.get(userId) || "none",
     }));
+
   res.json(result);
 };

@@ -14,7 +14,7 @@ app.use(
       "https://nearby-friends-client.vercel.app",
     ],
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(morgan("dev"));
