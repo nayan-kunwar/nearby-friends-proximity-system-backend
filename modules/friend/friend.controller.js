@@ -1,3 +1,5 @@
+import { ERROR_CODES } from "../../constants/errorCodes.js";
+import { logger } from "../../utils/logger.js";
 import Friend from "./friend.model.js";
 import FriendRequestModel from "./FriendRequest.model.js";
 
@@ -50,6 +52,8 @@ export const sendFriendRequest = async (req, res) => {
     });
 
     return res.status(201).json({
+      success: true,
+      statusCode: 201,
       message: "Friend request sent successfully",
     });
   } catch (err) {
@@ -108,17 +112,20 @@ export const getFriendRequests = async (req, res) => {
       receiver: userId,
       status: "pending",
     })
-      .populate("sender", "name email")
+      .populate("sender", "fullName email")
       .sort({ createdAt: -1 });
 
+    logger.info("Friend requests fetched successfully", { requestId: req.id });
     res.status(200).json({
       success: true,
       data: requests,
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch friend requests",
+      message: err.message,
+      errorCode: ERROR_CODES.INTERNAL_SERVER_ERROR,
     });
   }
 };
