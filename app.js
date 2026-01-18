@@ -9,6 +9,7 @@ import { requestLogger } from "./middlewares/requestLogger.middleware.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { register } from "./metrics.js";
 import { cpuTask } from "./helpers/cpuIntensiveTask.js";
+import { httpMetricsMiddleware } from "./middlewares/httpMetrics.middleware.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(
 app.use(express.json());
 app.use(requestIdMiddleware);
 app.use(requestLogger);
+app.use(httpMetricsMiddleware);
 app.use(morgan("dev"));
 
 app.get("/", (req, res) => res.json({ message: "Server is up and running." }));
